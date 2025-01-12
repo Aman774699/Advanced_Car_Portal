@@ -2,10 +2,10 @@ package com.immersive.advance_car_portal.controller;
 
 import com.immersive.advance_car_portal.entities.Carsentity;
 import com.immersive.advance_car_portal.entities.Imageentity;
-import com.immersive.advance_car_portal.repository.ImageRepository;
 import com.immersive.advance_car_portal.services.CarsServices;
 import com.immersive.advance_car_portal.services.ImageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,28 +16,52 @@ import java.util.Optional;
 @RequestMapping("/Images")
 public class ImageController {
     @Autowired
-    private ImageService imageService;
+    ImageService imageService;
     @Autowired
-    private CarsServices carsServices;
-    @PostMapping("/save/Image")
-    public ResponseEntity<Imageentity> saveImage(@RequestBody Imageentity image) {
-        imageService.add_image(image);
-        return ResponseEntity.ok(image);
-    }
-    @GetMapping("/GetAll/Images/{car_id}")
-    public ResponseEntity<List<Imageentity>> getAllImages(@PathVariable Long car_id) {
-        List<Imageentity>images=imageService.getAll_images(car_id);
-        return ResponseEntity.ok(images);
-    }
-    @DeleteMapping("Delete/Image/{image_id}")
-    public ResponseEntity<Imageentity> deleteImage(@PathVariable Long image_id) {
-        Optional<Imageentity> imageentity=imageService.get_image(image_id);
-        if(imageentity.isPresent()) {
-            imageService.delete_image(imageentity);
-            return ResponseEntity.ok(imageentity.get());
+    CarsServices carsServices;
+
+    @PostMapping("/save/{car_id}")
+    public ResponseEntity<Imageentity> saveImage(@RequestBody Imageentity imageentity,@PathVariable Long car_id) {
+        Optional<Carsentity>car=carsServices.getCarById(car_id);
+        if(car.isPresent())
+        {
+            imageentity.setCarId(car_id);
+            imageService.add_image(imageentity);
+            return ResponseEntity.ok(imageentity);
         }
-        else {
-            return ResponseEntity.notFound().build();
+        return (ResponseEntity<Imageentity>) ResponseEntity.status(HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/get/{car_id}")
+    public ResponseEntity<List<Imageentity>> getImages(@PathVariable Long car_id) {
+        Optional<Carsentity> carsentity = carsServices.getCarById(car_id);
+        if (carsentity.isPresent()) {
+            List<Imageentity> imageentity = imageService.getAll_images(car_id);
+            return ResponseEntity.ok(imageentity);
         }
+        return (ResponseEntity<List<Imageentity>>) ResponseEntity.status(HttpStatus.NOT_FOUND);
+    }
+    @GetMapping("/get/{car_id}/{image_id}")
+    public ResponseEntity<Optional<Imageentity>>getImages(@PathVariable Long car_id, @PathVariable Long image_id)
+    {
+        Optional<Carsentity> carsentity=carsServices.getCarById(car_id);
+        if(carsentity.isPresent())
+        {
+            Optional<Imageentity> imageentity=imageService.get_image(image_id);
+            return ResponseEntity.ok(imageentity);
+        }
+        return (ResponseEntity<Optional<Imageentity>>) ResponseEntity.status(HttpStatus.NOT_FOUND);
+    }
+    @DeleteMapping("/get/{car_id}/{image_id}")
+    public ResponseEntity<String>deleteImages(@PathVariable Long car_id, @PathVariable Long image_id)
+    {
+        Optional<Carsentity> carsentity=carsServices.getCarById(car_id);
+        if(carsentity.isPresent())
+        {
+            imageService.deleteImage(image_id);
+            return ResponseEntity.ok("Image Deleted Successfully");
+        }
+        return ResponseEntity.ok("Car Not Found...");
     }
 }
+
